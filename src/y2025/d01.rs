@@ -20,7 +20,7 @@ fn a(input: &str) -> anyhow::Result<i32> {
         .lines()
         .map(parse)
         .try_fold::<_, _, anyhow::Result<_>>((50, 0), |(position, password), amount| {
-            let position = turn(position, amount?);
+            let (position, _) = turn(position, amount?);
             let password = password + (position == 0) as i32;
             Ok((position, password))
         })?;
@@ -33,7 +33,7 @@ fn b(input: &str) -> anyhow::Result<i32> {
         .lines()
         .map(parse)
         .try_fold::<_, _, anyhow::Result<_>>((50, 0), |(position, password), amount| {
-            let (position, zeros) = turn_count_zeros(position, amount?);
+            let (position, zeros) = turn(position, amount?);
             let password = password + zeros;
             Ok((position, password))
         })?;
@@ -43,13 +43,9 @@ fn b(input: &str) -> anyhow::Result<i32> {
 
 const DIAL: i32 = 100;
 
-fn turn(position: i32, amount: i32) -> i32 {
-    (position + amount).rem_euclid(DIAL)
-}
-
-fn turn_count_zeros(position: i32, amount: i32) -> (i32, i32) {
-    let (mut zeros, end) = (position + amount).div_rem_euclid(&DIAL);
-    zeros = zeros.abs();
+fn turn(position: i32, amount: i32) -> (i32, i32) {
+    let (zeros, end) = (position + amount).div_rem_euclid(&DIAL);
+    let mut zeros = zeros.abs();
 
     if amount < 0 {
         let was_zero = position == 0;
@@ -66,68 +62,27 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
-    #[case(0, 0, 0)]
-    #[case(50, -68, 82)]
-    #[case(82, -30, 52)]
-    #[case(52, 48, 0)]
-    #[case(0, -5, 95)]
-    #[case(95, 60, 55)]
-    #[case(55, -55, 0)]
-    #[case(0, -1, 99)]
-    #[case(99, -99, 0)]
-    #[case(0, 14, 14)]
-    #[case(14, -82, 32)]
-    fn test_turn(#[case] position: i32, #[case] amount: i32, #[case] expected: i32) {
+    #[case(0, 0, (0, 0))]
+    #[case(50, -68, (82, 1))]
+    #[case(82, -30, (52, 0))]
+    #[case(52, 48, (0, 1))]
+    #[case(0, -5, (95, 0))]
+    #[case(95, 60, (55, 1))]
+    #[case(55, -55, (0, 1))]
+    #[case(0, -1, (99, 0))]
+    #[case(99, -99, (0, 1))]
+    #[case(0, 14, (14, 0))]
+    #[case(14, -82, (32, 1))]
+    #[case(50, 1000, (50, 10))]
+    #[case(50, -1000, (50, 10))]
+    #[case(0, 1000, (0, 10))]
+    #[case(0, -1000, (0, 10))]
+    #[case(0, 100, (0, 1))]
+    #[case(0, -100, (0, 1))]
+    #[case(50, 150, (0, 2))]
+    #[case(50, -150, (0, 2))]
+    fn test_turn(#[case] position: i32, #[case] amount: i32, #[case] expected: (i32, i32)) {
         let result = super::turn(position, amount);
-        assert_eq!(result, expected);
-    }
-
-    #[rstest]
-    #[case(0, 0, 0)]
-    #[case(50, -68, 82)]
-    #[case(82, -30, 52)]
-    #[case(52, 48, 0)]
-    #[case(0, -5, 95)]
-    #[case(95, 60, 55)]
-    #[case(55, -55, 0)]
-    #[case(0, -1, 99)]
-    #[case(99, -99, 0)]
-    #[case(0, 14, 14)]
-    #[case(14, -82, 32)]
-    fn test_turn_count_zeros_position(
-        #[case] position: i32,
-        #[case] amount: i32,
-        #[case] expected: i32,
-    ) {
-        let (result, _) = super::turn_count_zeros(position, amount);
-        assert_eq!(result, expected);
-    }
-
-    #[rstest]
-    #[case(0, 0, 0)]
-    #[case(50, -68, 1)]
-    #[case(82, -30, 0)]
-    #[case(52, 48, 1)]
-    #[case(0, -5, 0)]
-    #[case(95, 60, 1)]
-    #[case(55, -55, 1)]
-    #[case(0, -1, 0)]
-    #[case(99, -99, 1)]
-    #[case(0, 14, 0)]
-    #[case(14, -82, 1)]
-    #[case(50, 1000, 10)]
-    #[case(50, -1000, 10)]
-    #[case(0, 1000, 10)]
-    #[case(0, -1000, 10)]
-    #[case(0, 100, 1)]
-    #[case(0, -100, 1)]
-    #[case(50, -150, 2)]
-    fn test_turn_count_zeros_zeros(
-        #[case] position: i32,
-        #[case] amount: i32,
-        #[case] expected: i32,
-    ) {
-        let (_, result) = super::turn_count_zeros(position, amount);
         assert_eq!(result, expected);
     }
 }
