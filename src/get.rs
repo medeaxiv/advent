@@ -32,9 +32,15 @@ pub fn run_command(cli: GetCli) -> anyhow::Result<()> {
 
 pub fn get_input(year: u32, day: u32) -> Result<String, GetError> {
     if let Ok(contents) = read_input(year, day) {
+        tracing::trace!(year, day, "Input read from local file");
         return Ok(contents);
     }
 
+    tracing::trace!(
+        year,
+        day,
+        "Unable to read input from local file; fetch input from AoC server"
+    );
     fetch_input(year, day)
 }
 
