@@ -1,5 +1,3 @@
-use std::num::NonZeroU64;
-
 use crate::solution::Solution;
 
 pub fn solution() -> Solution {
@@ -38,63 +36,36 @@ fn b(input: &str) -> anyhow::Result<u64> {
 }
 
 fn bank_joltage(bank: &[u8], n: u32) -> u64 {
-    struct Ctx<'a> {
-        bank: &'a [u8],
-        cache: Vec<Option<NonZeroU64>>,
-        limit: u32,
-    }
-
-    impl<'a> Ctx<'a> {
-        fn new(bank: &'a [u8], limit: u32) -> Self {
-            let cache_len = bank.len() * limit as usize;
-            let cache = vec![None; cache_len];
-            Self { bank, cache, limit }
-        }
-
-        fn idx(&self, index: usize, exp: u32) -> usize {
-            (self.bank.len() * exp as usize) + index
-        }
-
-        fn get(&self, index: usize, exp: u32) -> Option<NonZeroU64> {
-            let cache_index = self.idx(index, exp);
-            self.cache[cache_index]
-        }
-
-        fn insert(&mut self, index: usize, exp: u32, value: u64) {
-            let cache_index = self.idx(index, exp);
-            self.cache[cache_index] = NonZeroU64::new(value);
-        }
-    }
-
-    fn inner(ctx: &mut Ctx, index: usize, exp: u32) -> u64 {
-        if exp >= ctx.limit {
-            return 0;
-        }
-
-        if let Some(cached) = ctx.get(index, exp) {
-            return cached.get();
-        }
-
-        let value = ctx.bank[index] as u64 * 10u64.strict_pow(exp);
+    fn window_max(window: &[u8]) -> (u8, usize) {
         let mut max = 0;
-        for next_index in (0..index).rev() {
-            let msd = inner(ctx, next_index, exp + 1);
-            max = max.max(msd);
+        let mut idx = 0;
+        for (i, &value) in window.iter().enumerate() {
+            if value > max {
+                max = value;
+                idx = i;
+            }
         }
 
-        let result = value + max;
-        ctx.insert(index, exp, result);
-        result
+        (max, idx)
     }
 
-    let mut ctx = Ctx::new(bank, n);
-    let mut max = 0;
-    for i in (0..bank.len()).rev() {
-        let value = inner(&mut ctx, i, 0);
-        max = max.max(value);
+    let n = n - 1;
+    let mut window_start = 0;
+    let mut window_len = bank.len() - n as usize;
+    let mut position = 10u64.strict_pow(n);
+    let mut joltage = 0;
+    while position != 0 {
+        let window_end = window_start + window_len;
+        let window = &bank[window_start..window_end];
+        let (digit, idx) = window_max(window);
+
+        joltage += digit as u64 * position;
+        position /= 10;
+        window_start += 1 + idx;
+        window_len -= idx;
     }
 
-    max
+    joltage
 }
 
 #[cfg(test)]
