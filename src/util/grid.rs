@@ -11,6 +11,7 @@ use crate::util::{
     style::StyleTracker,
 };
 
+#[derive(Clone)]
 pub struct Grid<T>(Array2<T>);
 
 impl<T> Grid<T> {
