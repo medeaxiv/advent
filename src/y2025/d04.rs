@@ -22,52 +22,62 @@ fn parse(input: &str) -> HashSet<(i32, i32)> {
 fn a(input: &str) -> anyhow::Result<u64> {
     let rolls = parse(input);
 
-    let accessible = count_accessible_rolls(&rolls);
+    let mut accessible = 0;
+    with_accessible_rolls(&rolls, |_, _| accessible += 1);
     Ok(accessible)
 }
 
 fn b(input: &str) -> anyhow::Result<u64> {
     let mut rolls = parse(input);
+    let initial = rolls.len();
+    let mut removed = Vec::new();
+    let mut dirty = HashSet::default();
+    with_accessible_rolls(&rolls, |x, y| removed.push((x, y)));
 
-    let mut removed = 0;
-    loop {
-        let mut next = HashSet::default();
-        remove_accessible_rolls(&rolls, &mut next);
-        let removed_this_round = rolls.len() - next.len();
-        if removed_this_round == 0 {
-            break;
+    while !removed.is_empty() {
+        for roll in removed.drain(..) {
+            dirty.extend(moore_neighborhood(roll.0, roll.1));
+            rolls.remove(&roll);
         }
 
-        removed += removed_this_round as u64;
-        rolls = next;
+        with_accessible_rolls_masked(&rolls, &dirty, |x, y| removed.push((x, y)));
+        dirty.clear();
     }
 
-    Ok(removed)
+    let remaining = rolls.len();
+    let removed = initial - remaining;
+    Ok(removed as u64)
 }
 
-fn count_accessible_rolls(rolls: &HashSet<(i32, i32)>) -> u64 {
-    let mut accessible = 0;
-    for &(x, y) in rolls.iter() {
+fn with_accessible_rolls<F>(rolls: &HashSet<(i32, i32)>, mut f: F)
+where
+    F: FnMut(i32, i32),
+{
+    for &(x, y) in rolls {
         let neighborhood = moore_neighborhood(x, y);
         let rolls = neighborhood.filter(|n| rolls.contains(n));
         let roll_count = rolls.count();
 
         if roll_count < 4 {
-            accessible += 1;
+            f(x, y)
         }
     }
-
-    accessible
 }
 
-fn remove_accessible_rolls(read: &HashSet<(i32, i32)>, write: &mut HashSet<(i32, i32)>) {
-    for &(x, y) in read.iter() {
+fn with_accessible_rolls_masked<F>(
+    rolls: &HashSet<(i32, i32)>,
+    mask: &HashSet<(i32, i32)>,
+    mut f: F,
+) where
+    F: FnMut(i32, i32),
+{
+    for &(x, y) in rolls.intersection(mask) {
         let neighborhood = moore_neighborhood(x, y);
-        let rolls = neighborhood.filter(|n| read.contains(n));
+        let rolls = neighborhood.filter(|n| rolls.contains(n));
         let roll_count = rolls.count();
 
-        if roll_count >= 4 {
-            write.insert((x, y));
+        if roll_count < 4 {
+            f(x, y)
         }
     }
 }
