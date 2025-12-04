@@ -16,7 +16,7 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn trace() {
-    use tracing_subscriber::{EnvFilter, prelude::*};
+    use tracing_subscriber::EnvFilter;
 
     tracing_subscriber::fmt()
         .with_env_filter(EnvFilter::from_default_env())
