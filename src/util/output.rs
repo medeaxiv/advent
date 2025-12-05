@@ -25,8 +25,8 @@ macro_rules! impl_single_line_output {
 }
 
 impl_single_line_output! {
-    i8, i16, i32, i64, i128,
-    u8, u16, u32, u64, u128,
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize,
     f32, f64,
     Rational32, Rational64,
     BigInt, BigUint, BigRational,
