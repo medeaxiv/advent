@@ -1,4 +1,7 @@
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    time::{Duration, Instant},
+};
 
 use crate::util::{output::Output, vecset::SortedVecSet};
 
@@ -146,19 +149,19 @@ impl Solution {
 #[error("{} {} failed", .0, if *.0 > 1 {"solutions"} else {"solution"})]
 struct SolutionErrors(u32);
 
-fn print_solution_result(result: &anyhow::Result<BoxedOutput>) {
+fn print_solution_result(result: &anyhow::Result<(BoxedOutput, Duration)>) {
     use crate::util::style::{Color, ToStyled as _};
 
     match result {
-        Ok(output) if output.is_multiline() => {
+        Ok((output, time)) if output.is_multiline() => {
+            println!(" ({time:?})");
             let formatted = format!("{output}");
-            println!();
             for line in formatted.lines() {
                 println!("  {line}");
             }
         }
-        Ok(output) => {
-            println!(" {output}");
+        Ok((output, time)) => {
+            println!(" {output} ({time:?})");
         }
         Err(error) => {
             let error = format!("{error}");
@@ -168,7 +171,7 @@ fn print_solution_result(result: &anyhow::Result<BoxedOutput>) {
 }
 
 type BoxedOutput = Box<dyn Output>;
-type InnerFn = dyn Fn(&str) -> anyhow::Result<BoxedOutput>;
+type InnerFn = dyn Fn(&str) -> anyhow::Result<(BoxedOutput, Duration)>;
 type BoxedFn = Box<InnerFn>;
 
 fn wrap<F, O>(f: F) -> BoxedFn
@@ -177,9 +180,11 @@ where
     O: Output + 'static,
 {
     let closure = move |input: &str| {
+        let start = Instant::now();
         let output = (f)(input)?;
+        let time = start.elapsed();
         let boxed: Box<dyn Output> = Box::new(output);
-        Ok(boxed)
+        Ok((boxed, time))
     };
 
     Box::new(closure)
