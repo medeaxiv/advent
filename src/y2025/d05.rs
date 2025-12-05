@@ -1,4 +1,4 @@
-use std::ops::RangeInclusive;
+use std::{ops::RangeInclusive, str::FromStr};
 
 use crate::solution::Solution;
 
@@ -8,25 +8,37 @@ pub fn solution() -> Solution {
 
 fn parse(input: &str) -> anyhow::Result<(Ranges, Vec<u64>)> {
     let mut lines = input.lines();
-    let mut ranges = Ranges::builder();
-    for line in (&mut lines).take_while(|l| !l.is_empty()) {
-        let (a, b) = line
-            .split_once('-')
-            .ok_or_else(|| anyhow::anyhow!("invalid input"))?;
-        let a = a.parse()?;
-        let b = b.parse()?;
-        ranges.push(a..=b);
-    }
-
-    let ranges = ranges.build();
-
-    let mut ids = Vec::new();
-    for line in lines {
-        let id = line.parse()?;
-        ids.push(id);
-    }
-
+    let ranges = (&mut lines)
+        .take_while(|l| !l.is_empty())
+        .map(|line| {
+            let (a, b) = line
+                .split_once('-')
+                .ok_or_else(|| anyhow::anyhow!("invalid input"))?;
+            let a = a.parse()?;
+            let b = b.parse()?;
+            Ok::<_, anyhow::Error>(a..=b)
+        })
+        .collect::<Result<_, _>>()?;
+    let ranges = RangesBuilder(ranges).build();
+    let ids = lines.map(FromStr::from_str).collect::<Result<_, _>>()?;
     Ok((ranges, ids))
+}
+
+fn parse_ranges(input: &str) -> anyhow::Result<Ranges> {
+    let ranges = input
+        .lines()
+        .take_while(|l| !l.is_empty())
+        .map(|line| {
+            let (a, b) = line
+                .split_once('-')
+                .ok_or_else(|| anyhow::anyhow!("invalid input"))?;
+            let a = a.parse()?;
+            let b = b.parse()?;
+            Ok::<_, anyhow::Error>(a..=b)
+        })
+        .collect::<Result<_, _>>()?;
+    let ranges = RangesBuilder(ranges).build();
+    Ok(ranges)
 }
 
 fn a(input: &str) -> anyhow::Result<usize> {
@@ -36,7 +48,7 @@ fn a(input: &str) -> anyhow::Result<usize> {
 }
 
 fn b(input: &str) -> anyhow::Result<u64> {
-    let (ranges, _) = parse(input)?;
+    let ranges = parse_ranges(input)?;
     let count = ranges.iter().map(|r| r.len()).sum();
     Ok(count)
 }
