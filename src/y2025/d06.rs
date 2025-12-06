@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{solution::Solution, util::grid::Grid};
+use crate::solution::Solution;
 
 pub fn solution() -> Solution {
     Solution::new().with_a(a).with_b(b)
