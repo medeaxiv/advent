@@ -39,6 +39,11 @@ impl<T> Grid<T> {
         Self(array)
     }
 
+    pub fn from_vec(width: u32, height: u32, v: Vec<T>) -> Result<Self, ShapeError> {
+        let array = Array2::from_shape_vec(sh(width, height), v)?;
+        Ok(Self(array))
+    }
+
     pub const fn from_array(array: Array2<T>) -> Self {
         Self(array)
     }
@@ -94,8 +99,12 @@ impl<T> Grid<T> {
         self.0.columns()
     }
 
-    pub fn columns_but<'g>(&'g mut self) -> LanesMut<'g, T, Dim<[usize; 1]>> {
+    pub fn columns_mut<'g>(&'g mut self) -> LanesMut<'g, T, Dim<[usize; 1]>> {
         self.0.columns_mut()
+    }
+
+    pub fn transpose(&mut self) {
+        self.0.swap_axes(0, 1);
     }
 }
 
@@ -131,8 +140,8 @@ where
             }
         }
 
-        let array = Array2::from_shape_vec(sh(width, height), v)?;
-        Ok(Self(array))
+        let grid = Self::from_vec(width, height, v)?;
+        Ok(grid)
     }
 }
 
