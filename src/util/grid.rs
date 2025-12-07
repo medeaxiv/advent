@@ -1,8 +1,9 @@
 use std::{fmt::Display, str::FromStr};
 
 use ndarray::{
-    Array2, Dim, ShapeError,
+    Array2, ArrayView1, ArrayViewMut1, Dim, ShapeError,
     iter::{Lanes, LanesMut},
+    s,
 };
 
 use crate::util::{
@@ -95,12 +96,28 @@ impl<T> Grid<T> {
         self.0.rows_mut()
     }
 
+    pub fn row<'g>(&'g self, row: u32) -> ArrayView1<'g, T> {
+        self.0.slice(s![row as usize, ..])
+    }
+
+    pub fn row_mut<'g>(&'g mut self, row: u32) -> ArrayViewMut1<'g, T> {
+        self.0.slice_mut(s![row as usize, ..])
+    }
+
     pub fn columns<'g>(&'g self) -> Lanes<'g, T, Dim<[usize; 1]>> {
         self.0.columns()
     }
 
     pub fn columns_mut<'g>(&'g mut self) -> LanesMut<'g, T, Dim<[usize; 1]>> {
         self.0.columns_mut()
+    }
+
+    pub fn column<'g>(&'g self, column: u32) -> ArrayView1<'g, T> {
+        self.0.slice(s![.., column as usize])
+    }
+
+    pub fn column_mut<'g>(&'g mut self, column: u32) -> ArrayViewMut1<'g, T> {
+        self.0.slice_mut(s![.., column as usize])
     }
 
     pub fn transpose(&mut self) {
