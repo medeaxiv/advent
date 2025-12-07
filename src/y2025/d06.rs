@@ -32,42 +32,36 @@ fn a(input: &str) -> anyhow::Result<u64> {
 }
 
 fn b(input: &str) -> anyhow::Result<u64> {
-    let mut lines = input.lines();
-    let operators: Vec<_> = lines
-        .next_back()
-        .ok_or_else(|| anyhow::anyhow!("empty input"))?
-        .split_ascii_whitespace()
-        .flat_map(Op::from_str)
-        .collect();
-
-    let lines: Vec<_> = lines.map(str::as_bytes).collect();
+    let lines: Vec<_> = input.lines().map(str::as_bytes).collect();
+    let cols = 0..lines[0].len();
     let mut operands = Vec::new();
-    let mut problem_index = 0;
     let mut total = 0;
-    for col in 0..lines[0].len() {
+    for col in cols.rev() {
         let mut operand = 0;
         for line in lines.iter() {
             let ch = line[col] as char;
-            let digit = match ch {
-                ' ' => continue,
-                '0'..='9' => ch as u64 - '0' as u64,
-                _ => return Err(anyhow::anyhow!("invalid input")),
+            match ch {
+                '0'..='9' => {
+                    let digit = ch as u64 - '0' as u64;
+                    operand = (operand * 10) + digit;
+                }
+                '+' => {
+                    operands.push(operand);
+                    operand = 0;
+                    total += operands.drain(..).sum::<u64>();
+                }
+                '*' => {
+                    operands.push(operand);
+                    operand = 0;
+                    total += operands.drain(..).product::<u64>();
+                }
+                _ => continue,
             };
-
-            operand = (operand * 10) + digit;
         }
 
         if operand != 0 {
             operands.push(operand);
-        } else {
-            total += operators[problem_index].apply(&operands);
-            problem_index += 1;
-            operands.clear();
         }
-    }
-
-    if !operands.is_empty() {
-        total += operators[problem_index].apply(&operands);
     }
 
     Ok(total)
@@ -91,14 +85,6 @@ impl Op {
         match self {
             Self::Add => *dest += value,
             Self::Mul => *dest *= value,
-        }
-    }
-
-    pub fn apply(&self, operands: &[u64]) -> u64 {
-        let iter = operands.iter().copied();
-        match self {
-            Self::Add => iter.sum(),
-            Self::Mul => iter.product(),
         }
     }
 }
