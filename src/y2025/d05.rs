@@ -57,10 +57,6 @@ fn b(input: &str) -> anyhow::Result<u64> {
 struct Ranges(Vec<RangeInclusive<u64>>);
 
 impl Ranges {
-    pub fn builder() -> RangesBuilder {
-        RangesBuilder::default()
-    }
-
     pub fn contains(&self, value: &u64) -> bool {
         for range in self.0.iter() {
             if range.start() > value {
@@ -84,10 +80,6 @@ impl Ranges {
 struct RangesBuilder(Vec<RangeInclusive<u64>>);
 
 impl RangesBuilder {
-    pub fn push(&mut self, range: RangeInclusive<u64>) {
-        self.0.push(range);
-    }
-
     pub fn build(self) -> Ranges {
         let Self(mut ranges) = self;
         let ranges = Self::merge_ranges(&mut ranges);
