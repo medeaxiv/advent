@@ -4,6 +4,7 @@ pub mod bitmap;
 pub mod char;
 pub mod grid;
 pub mod output;
+pub mod slice;
 pub mod style;
 pub mod vecset;
 pub mod write;
