@@ -1,6 +1,8 @@
-use foldhash::{HashMap, HashSet};
+use std::num::NonZeroU64;
 
-use crate::solution::Solution;
+use foldhash::HashSet;
+
+use crate::{solution::Solution, util::slice::SliceExt};
 
 pub fn solution() -> Solution {
     Solution::new().with_a(a).with_b(b)
@@ -41,15 +43,20 @@ fn parse(input: &str) -> Input {
 fn a(input: &str) -> anyhow::Result<u64> {
     let input = parse(input);
 
-    let mut beams = HashMap::from_iter([(input.start, 1)]);
+    let mut beams = vec![None; input.width as usize];
+    beams[input.start as usize] = NonZeroU64::new(1);
     let mut buffer = beams.clone();
     let mut splits = 0;
     for y in 1..input.height {
         with_split_beams(&input.splitters, y, &beams, |x, count| {
             splits += 1;
-            buffer.remove(&x);
-            buffer.entry(x - 1).and_modify(add(count)).or_insert(count);
-            buffer.entry(x + 1).and_modify(add(count)).or_insert(count);
+            let x = x as usize;
+            buffer[x] = None;
+            let [left, right] = buffer
+                .multi_index_mut([x - 1, x + 1])
+                .expect("indices should be in bounds and different");
+            add(left, count);
+            add(right, count);
         });
 
         beams = buffer.clone();
@@ -61,27 +68,40 @@ fn a(input: &str) -> anyhow::Result<u64> {
 fn b(input: &str) -> anyhow::Result<u64> {
     let input = parse(input);
 
-    let mut beams = HashMap::from_iter([(input.start, 1)]);
+    let mut beams = vec![None; input.width as usize];
+    beams[input.start as usize] = NonZeroU64::new(1);
     let mut buffer = beams.clone();
     for y in 1..input.height {
         with_split_beams(&input.splitters, y, &beams, |x, count| {
-            buffer.remove(&x);
-            buffer.entry(x - 1).and_modify(add(count)).or_insert(count);
-            buffer.entry(x + 1).and_modify(add(count)).or_insert(count);
+            let x = x as usize;
+            buffer[x] = None;
+            let [left, right] = buffer
+                .multi_index_mut([x - 1, x + 1])
+                .expect("indices should be in bounds and different");
+            add(left, count);
+            add(right, count);
         });
 
         beams = buffer.clone();
     }
 
-    let timelines = beams.values().copied().sum();
+    let timelines = beams.iter().flat_map(|c| c.map(NonZeroU64::get)).sum();
     Ok(timelines)
 }
 
-fn with_split_beams<F>(splitters: &HashSet<(i64, i64)>, y: i64, beams: &HashMap<i64, u64>, mut f: F)
-where
+fn with_split_beams<F>(
+    splitters: &HashSet<(i64, i64)>,
+    y: i64,
+    beams: &[Option<NonZeroU64>],
+    mut f: F,
+) where
     F: FnMut(i64, u64),
 {
-    for (&x, &count) in beams.iter() {
+    for (x, count) in beams
+        .iter()
+        .enumerate()
+        .flat_map(|(index, count)| count.map(|count| (index as i64, count.get())))
+    {
         let key = (x, y);
         if splitters.contains(&key) {
             f(x, count);
@@ -89,11 +109,12 @@ where
     }
 }
 
-fn add<T>(value: T) -> impl Fn(&mut T)
-where
-    T: std::ops::AddAssign + Copy,
-{
-    move |dest| *dest += value
+fn add(dest: &mut Option<NonZeroU64>, count: u64) {
+    if let Some(dest) = dest.as_mut() {
+        *dest = (*dest).saturating_add(count);
+    } else {
+        *dest = NonZeroU64::new(count);
+    }
 }
 
 #[cfg(test)]
