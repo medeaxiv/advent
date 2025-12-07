@@ -16,7 +16,7 @@ struct Input {
 
 fn parse(input: &str) -> Input {
     let mut parsed = Input::default();
-    for (y, line) in input.lines().enumerate() {
+    for (y, line) in input.lines().step_by(2).enumerate() {
         parsed.height += 1;
         for (x, ch) in line.chars().enumerate() {
             if y == 0 {
@@ -44,7 +44,7 @@ fn a(input: &str) -> anyhow::Result<u64> {
     let mut beams = HashMap::from_iter([(input.start, 1)]);
     let mut buffer = beams.clone();
     let mut splits = 0;
-    for y in (2..input.height).step_by(2) {
+    for y in 1..input.height {
         with_split_beams(&input.splitters, y, &beams, |x, count| {
             splits += 1;
             buffer.remove(&x);
@@ -63,7 +63,7 @@ fn b(input: &str) -> anyhow::Result<u64> {
 
     let mut beams = HashMap::from_iter([(input.start, 1)]);
     let mut buffer = beams.clone();
-    for y in (2..input.height).step_by(2) {
+    for y in 1..input.height {
         with_split_beams(&input.splitters, y, &beams, |x, count| {
             buffer.remove(&x);
             buffer.entry(x - 1).and_modify(add(count)).or_insert(count);
