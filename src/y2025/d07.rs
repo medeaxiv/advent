@@ -1,119 +1,106 @@
-use std::num::NonZeroU64;
-
-use foldhash::HashSet;
-
-use crate::{solution::Solution, util::slice::SliceExt};
+use crate::{
+    solution::Solution,
+    util::{char::FromChar, grid::Grid},
+};
 
 pub fn solution() -> Solution {
     Solution::new().with_a(a).with_b(b)
 }
 
-#[derive(Debug, Default, Clone)]
-struct Input {
-    width: i64,
-    height: i64,
-    start: i64,
-    splitters: HashSet<(i64, i64)>,
-}
+fn parse(input: &str) -> anyhow::Result<Grid<Tile>> {
+    let mut width = 0;
+    let mut height = 0;
+    let mut tiles = Vec::new();
 
-fn parse(input: &str) -> Input {
-    let mut parsed = Input::default();
     for (y, line) in input.lines().step_by(2).enumerate() {
-        parsed.height += 1;
-        for (x, ch) in line.chars().enumerate() {
+        height += 1;
+        for ch in line.chars() {
             if y == 0 {
-                parsed.width += 1;
+                width += 1;
             }
 
-            match ch {
-                'S' => {
-                    parsed.start = x as i64;
-                }
-                '^' => {
-                    parsed.splitters.insert((x as i64, y as i64));
-                }
-                _ => {}
-            }
+            let tile = Tile::from_char(ch)?;
+            tiles.push(tile);
         }
     }
 
-    parsed
+    let grid = Grid::from_vec(width, height, tiles)?;
+    Ok(grid)
 }
 
 fn a(input: &str) -> anyhow::Result<u64> {
-    let input = parse(input);
+    let grid = parse(input)?;
+    let mut beams = vec![false; grid.width() as usize];
+    let mut next = beams.clone();
 
-    let mut beams = vec![None; input.width as usize];
-    beams[input.start as usize] = NonZeroU64::new(1);
-    let mut buffer = beams.clone();
     let mut splits = 0;
-    for y in 1..input.height {
-        with_split_beams(&input.splitters, y, &beams, |x, count| {
-            splits += 1;
-            let x = x as usize;
-            buffer[x] = None;
-            let [left, right] = buffer
-                .multi_index_mut([x - 1, x + 1])
-                .expect("indices should be in bounds and different");
-            add(left, count);
-            add(right, count);
-        });
+    for tiles in grid.rows() {
+        for (x, tile) in tiles.iter().enumerate() {
+            match tile {
+                Tile::Empty => {}
+                Tile::Start => {
+                    next[x] = true;
+                }
+                Tile::Splitter => {
+                    let had_beam = next[x];
+                    next[x] = false;
+                    next[x - 1] = true;
+                    next[x + 1] = true;
+                    splits += had_beam as u64;
+                }
+            }
+        }
 
-        beams = buffer.clone();
+        beams.copy_from_slice(&next);
     }
 
     Ok(splits)
 }
 
 fn b(input: &str) -> anyhow::Result<u64> {
-    let input = parse(input);
+    let grid = parse(input)?;
+    let mut beams = vec![0; grid.width() as usize];
+    let mut next = beams.clone();
 
-    let mut beams = vec![None; input.width as usize];
-    beams[input.start as usize] = NonZeroU64::new(1);
-    let mut buffer = beams.clone();
-    for y in 1..input.height {
-        with_split_beams(&input.splitters, y, &beams, |x, count| {
-            let x = x as usize;
-            buffer[x] = None;
-            let [left, right] = buffer
-                .multi_index_mut([x - 1, x + 1])
-                .expect("indices should be in bounds and different");
-            add(left, count);
-            add(right, count);
-        });
+    for tiles in grid.rows() {
+        for (x, tile) in tiles.iter().enumerate() {
+            match tile {
+                Tile::Empty => {}
+                Tile::Start => {
+                    next[x] += 1;
+                }
+                Tile::Splitter => {
+                    let count = next[x];
+                    next[x] = 0;
+                    next[x - 1] += count;
+                    next[x + 1] += count;
+                }
+            }
+        }
 
-        beams = buffer.clone();
+        beams.copy_from_slice(&next);
     }
 
-    let timelines = beams.iter().flat_map(|c| c.map(NonZeroU64::get)).sum();
+    let timelines = beams.into_iter().sum();
     Ok(timelines)
 }
 
-fn with_split_beams<F>(
-    splitters: &HashSet<(i64, i64)>,
-    y: i64,
-    beams: &[Option<NonZeroU64>],
-    mut f: F,
-) where
-    F: FnMut(i64, u64),
-{
-    for (x, count) in beams
-        .iter()
-        .enumerate()
-        .flat_map(|(index, count)| count.map(|count| (index as i64, count.get())))
-    {
-        let key = (x, y);
-        if splitters.contains(&key) {
-            f(x, count);
-        }
-    }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Tile {
+    Empty,
+    Start,
+    Splitter,
 }
 
-fn add(dest: &mut Option<NonZeroU64>, count: u64) {
-    if let Some(dest) = dest.as_mut() {
-        *dest = (*dest).saturating_add(count);
-    } else {
-        *dest = NonZeroU64::new(count);
+impl FromChar for Tile {
+    type Err = std::convert::Infallible;
+
+    fn from_char(ch: char) -> Result<Self, Self::Err> {
+        match ch {
+            'S' => Ok(Self::Start),
+            '^' => Ok(Self::Splitter),
+            _ => Ok(Self::Empty),
+        }
     }
 }
 
