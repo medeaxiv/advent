@@ -7,6 +7,7 @@ pub mod output;
 pub mod slice;
 pub mod style;
 pub mod vecset;
+pub mod vector;
 pub mod write;
 
 pub fn min_max<T: PartialOrd>(a: T, b: T) -> (T, T) {
