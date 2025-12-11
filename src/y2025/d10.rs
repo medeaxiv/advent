@@ -104,11 +104,11 @@ impl Machine {
 
 mod parser {
     use nom::{
-        Parser,
+        IResult, Parser,
         bytes::{complete::tag, take_until},
         character::complete::u32,
-        multi::{many1, separated_list1},
-        sequence::delimited,
+        multi::{fold_many0, many1, separated_list1},
+        sequence::{delimited, preceded},
     };
 
     use super::Machine;
@@ -131,10 +131,7 @@ mod parser {
     pub fn parse(line: &str) -> anyhow::Result<Machine> {
         let lights = delimited(tag("["), take_until("]"), tag("] ")).map(parse_lights);
 
-        let bit = u32.map(|v| 1 << v);
-        let button = separated_list1(tag(","), bit);
-        let button =
-            delimited(tag("("), button, tag(") ")).map(|l| l.into_iter().fold(0, |a, b| a | b));
+        let button = delimited(tag("("), parse_button, tag(") "));
         let buttons = many1(button);
 
         let joltage = separated_list1(tag(","), u32);
@@ -150,6 +147,19 @@ mod parser {
             .enumerate()
             .filter(|(_, c)| *c == '#')
             .fold(0, |a, (i, _)| a | (1 << i))
+    }
+
+    fn parse_button<'i, I, E>(input: I) -> IResult<I, u32, E>
+    where
+        I: nom::Input + nom::Compare<&'i str>,
+        I::Item: nom::AsChar,
+        E: nom::error::ParseError<I>,
+    {
+        let mut bit = u32.map(|v| 1 << v);
+        let (input, button) = bit.parse(input)?;
+        let rest = preceded(tag(","), bit);
+        let result = fold_many0(rest, || button, |a, b| a | b).parse(input)?;
+        Ok(result)
     }
 }
 
