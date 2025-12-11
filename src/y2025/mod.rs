@@ -8,6 +8,7 @@ mod d07;
 mod d08;
 mod d09;
 mod d10;
+mod d11;
 
 use crate::solution::Solutions;
 
@@ -22,4 +23,5 @@ pub fn register(solutions: &mut Solutions) {
     solutions.register(2025, 8, self::d08::solution());
     solutions.register(2025, 9, self::d09::solution());
     solutions.register(2025, 10, self::d10::solution());
+    solutions.register(2025, 11, self::d11::solution());
 }
