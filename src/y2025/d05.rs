@@ -1,6 +1,6 @@
 use std::{ops::RangeInclusive, str::FromStr};
 
-use crate::solution::Solution;
+use crate::{solution::Solution, util::invalid_input};
 
 pub fn solution() -> Solution {
     Solution::new().with_a(a).with_b(b)
@@ -11,9 +11,7 @@ fn parse(input: &str) -> anyhow::Result<(Ranges, Vec<u64>)> {
     let ranges = (&mut lines)
         .take_while(|l| !l.is_empty())
         .map(|line| {
-            let (a, b) = line
-                .split_once('-')
-                .ok_or_else(|| anyhow::anyhow!("invalid input"))?;
+            let (a, b) = line.split_once('-').ok_or_else(invalid_input!())?;
             let a = a.parse()?;
             let b = b.parse()?;
             Ok::<_, anyhow::Error>(a..=b)
@@ -29,9 +27,7 @@ fn parse_ranges(input: &str) -> anyhow::Result<Ranges> {
         .lines()
         .take_while(|l| !l.is_empty())
         .map(|line| {
-            let (a, b) = line
-                .split_once('-')
-                .ok_or_else(|| anyhow::anyhow!("invalid input"))?;
+            let (a, b) = line.split_once('-').ok_or_else(invalid_input!())?;
             let a = a.parse()?;
             let b = b.parse()?;
             Ok::<_, anyhow::Error>(a..=b)

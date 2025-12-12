@@ -1,4 +1,4 @@
-use crate::solution::Solution;
+use crate::{solution::Solution, util::invalid_input};
 
 pub fn solution() -> Solution {
     Solution::new().with_a(a).with_b(b)
@@ -8,7 +8,7 @@ fn parse(fragment: &str) -> anyhow::Result<(u64, u64)> {
     let (low, high) = fragment
         .trim()
         .split_once('-')
-        .ok_or_else(|| anyhow::anyhow!("invalid input"))?;
+        .ok_or_else(invalid_input!())?;
     let low = low.parse()?;
     let high = high.parse()?;
     Ok((low, high))

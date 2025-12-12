@@ -21,9 +21,18 @@ macro_rules! invalid_input {
     ($reason:literal) => {
         || ::anyhow::anyhow!(concat!("invalid input: ", $reason))
     };
-    ($reasion:literal, $($e:expr),* $(,)?) => {
-        || ::anyhow::anyhow!(concat!("invalid input: ", $reason), $($expr),*)
+    ($reason:literal, $($e:expr),* $(,)?) => {
+        || ::anyhow::anyhow!(concat!("invalid input: ", $reason), $($e),*)
     };
+    ($error:ident) => {
+        |$error| ::anyhow::anyhow!("invalid input: {}", $error)
+    };
+    ($error:ident, $reason:literal) => {
+        |$error| ::anyhow::anyhow!(concat!("invalid input: ", $reason))
+    };
+    ($error:ident, $reason:literal, $($e:expr),* $(,)?) => {
+        |$error| ::anyhow::anyhow!(concat!("invalid input: ", $reason), $($e),*)
+    }
 }
 
 pub(crate) use invalid_input;

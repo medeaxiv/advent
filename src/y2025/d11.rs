@@ -1,6 +1,6 @@
 use foldhash::HashMap;
 
-use crate::solution::Solution;
+use crate::{solution::Solution, util::invalid_input};
 
 pub fn solution() -> Solution {
     Solution::new().with_a(a).with_b(b)
@@ -9,9 +9,7 @@ pub fn solution() -> Solution {
 fn parse<'i>(input: &'i str) -> anyhow::Result<Graph<'i>> {
     let mut graph = Graph::default();
     for line in input.lines() {
-        let (from, to) = line
-            .split_once(": ")
-            .ok_or_else(|| anyhow::anyhow!("invalid input"))?;
+        let (from, to) = line.split_once(": ").ok_or_else(invalid_input!())?;
         let from = graph.insert_node(from);
         for to in to.split_ascii_whitespace() {
             let to = graph.insert_node(to);
@@ -26,7 +24,7 @@ fn get_node_idx(network: &Graph, name: &str) -> anyhow::Result<NodeIdx> {
     let idx = *network
         .names
         .get(name)
-        .ok_or_else(|| anyhow::anyhow!("invalid input: missing '{name}' node"))?;
+        .ok_or_else(invalid_input!("missing '{name}' node"))?;
     Ok(idx)
 }
 

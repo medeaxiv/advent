@@ -5,7 +5,10 @@ use itertools::Itertools;
 
 use crate::{
     solution::Solution,
-    util::vector::{IVec3, vec3},
+    util::{
+        invalid_input,
+        vector::{IVec3, vec3},
+    },
 };
 
 pub fn solution() -> Solution {
@@ -27,7 +30,7 @@ fn parse(input: &str) -> anyhow::Result<Vec<IVec3>> {
         .lines()
         .map(|l| parse_node(l).map(|(_, n)| n))
         .collect::<Result<_, _>>()
-        .map_err(|e| anyhow::anyhow!("{e}"))?;
+        .map_err(invalid_input!(e))?;
     Ok(parsed)
 }
 

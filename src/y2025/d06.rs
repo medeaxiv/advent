@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::solution::Solution;
+use crate::{solution::Solution, util::invalid_input};
 
 pub fn solution() -> Solution {
     Solution::new().with_a(a).with_b(b)
@@ -10,7 +10,7 @@ fn a(input: &str) -> anyhow::Result<u64> {
     let mut lines = input.lines();
     let operators: Vec<_> = lines
         .next_back()
-        .ok_or_else(|| anyhow::anyhow!("empty input"))?
+        .ok_or_else(invalid_input!("empty input"))?
         .split_ascii_whitespace()
         .flat_map(Op::from_str)
         .collect();

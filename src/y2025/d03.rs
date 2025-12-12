@@ -1,4 +1,4 @@
-use crate::solution::Solution;
+use crate::{solution::Solution, util::invalid_input};
 
 pub fn solution() -> Solution {
     Solution::new().with_a(a).with_b(b)
@@ -8,7 +8,7 @@ fn parse(line: &str) -> anyhow::Result<Vec<u8>> {
     line.chars()
         .map(|c| char::to_digit(c, 10).map(|c| c as u8))
         .collect::<Option<Vec<_>>>()
-        .ok_or_else(|| anyhow::anyhow!("invalid input"))
+        .ok_or_else(invalid_input!())
 }
 
 fn a(input: &str) -> anyhow::Result<u64> {

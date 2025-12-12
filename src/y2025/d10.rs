@@ -111,6 +111,8 @@ mod parser {
         sequence::{delimited, preceded},
     };
 
+    use crate::util::invalid_input;
+
     use super::Machine;
 
     type Error<'i> = nom::error::Error<&'i str>;
@@ -139,7 +141,7 @@ mod parser {
 
         let parser = (lights, buttons, joltage).map(|(l, b, j)| Machine::new(l, b, j));
 
-        final_parse::<_, _, Error>(parser, line).map_err(|e| anyhow::anyhow!("{e}"))
+        final_parse::<_, _, Error>(parser, line).map_err(invalid_input!(e))
     }
 
     fn parse_lights(s: &str) -> u32 {

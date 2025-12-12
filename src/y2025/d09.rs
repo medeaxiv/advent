@@ -5,7 +5,7 @@ use itertools::Itertools;
 use crate::{
     solution::Solution,
     util::{
-        min_max,
+        invalid_input, min_max,
         vector::{IVec2, vec2},
     },
 };
@@ -16,9 +16,7 @@ pub fn solution() -> Solution {
 
 fn parse(input: &str) -> anyhow::Result<Vec<IVec2>> {
     let parser = |l: &str| {
-        let (x, y) = l
-            .split_once(',')
-            .ok_or_else(|| anyhow::anyhow!("invalid input"))?;
+        let (x, y) = l.split_once(',').ok_or_else(invalid_input!())?;
         let x = x.parse()?;
         let y = y.parse()?;
         Ok(vec2(x, y))
