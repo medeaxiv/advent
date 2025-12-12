@@ -2,26 +2,27 @@ use std::collections::BinaryHeap;
 
 use foldhash::{HashMap, HashSet};
 use itertools::Itertools;
-use nalgebra::Vector3;
 
-use crate::solution::Solution;
+use crate::{
+    solution::Solution,
+    util::vector::{IVec3, vec3},
+};
 
 pub fn solution() -> Solution {
     Solution::new().with_a(|i| a(i, 1000)).with_b(b)
 }
 
-fn parse_node(line: &str) -> nom::IResult<&str, Vector3<i64>> {
+fn parse_node(line: &str) -> nom::IResult<&str, IVec3> {
     use nom::{
         Parser,
         character::{char, complete::i64},
     };
 
-    let mut parser =
-        (i64, char(','), i64, char(','), i64).map(|(x, _, y, _, z)| Vector3::new(x, y, z));
+    let mut parser = (i64, char(','), i64, char(','), i64).map(|(x, _, y, _, z)| vec3(x, y, z));
     parser.parse(line)
 }
 
-fn parse(input: &str) -> anyhow::Result<Vec<Vector3<i64>>> {
+fn parse(input: &str) -> anyhow::Result<Vec<IVec3>> {
     let parsed: Vec<_> = input
         .lines()
         .map(|l| parse_node(l).map(|(_, n)| n))
@@ -84,7 +85,7 @@ struct Edge {
 }
 
 impl Edge {
-    pub fn candidates(nodes: &[Vector3<i64>]) -> BinaryHeap<Edge> {
+    pub fn candidates(nodes: &[IVec3]) -> BinaryHeap<Edge> {
         nodes
             .iter()
             .enumerate()
